@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const SafeOwnable = artifacts.require('SafeOwnableMock');
 
 contract('SafeOwnable', function (accounts) {
-  const [ owner, other ] = accounts;
+  const [ owner, other, onemore ] = accounts;
 
   beforeEach(async function () {
     this.safeOwnable = await SafeOwnable.new({ from: owner });
@@ -17,23 +17,42 @@ contract('SafeOwnable', function (accounts) {
   });
 
   describe('transfer ownership', function () {
-    it('changes owner after transfer', async function () {
-      const receipt = await this.safeOwnable.transferOwnership(other, { from: owner });
+    it('retains owner after transfer initiation', async function () {
+      await this.safeOwnable.beginTransferOwnership(other, { from: owner });
+
+      expect(await this.safeOwnable.owner()).to.equal(owner);
+    });
+
+    it('changes owner after transfer approval', async function () {
+      await this.safeOwnable.beginTransferOwnership(other, { from: owner });
+
+      expect(await this.safeOwnable.owner()).to.equal(owner);
+
+      const receipt = await this.safeOwnable.acceptTransferOwnership({ from: other });
       expectEvent(receipt, 'OwnershipTransferred');
 
       expect(await this.safeOwnable.owner()).to.equal(other);
     });
 
+    it('prevents others from accepting ownership transfer', async function () {
+      await this.safeOwnable.beginTransferOwnership(other, { from: owner });
+
+      await expectRevert(
+        this.safeOwnable.acceptTransferOwnership({ from: onemore }),
+        'SafeOwnable: caller is not the new owner',
+      );
+    });
+
     it('prevents non-owners from transferring', async function () {
       await expectRevert(
-        this.safeOwnable.transferOwnership(other, { from: other }),
+        this.safeOwnable.beginTransferOwnership(other, { from: other }),
         'SafeOwnable: caller is not the owner',
       );
     });
 
     it('guards ownership against stuck state', async function () {
       await expectRevert(
-        this.safeOwnable.transferOwnership(ZERO_ADDRESS, { from: owner }),
+        this.safeOwnable.beginTransferOwnership(ZERO_ADDRESS, { from: owner }),
         'SafeOwnable: new owner is the zero address',
       );
     });

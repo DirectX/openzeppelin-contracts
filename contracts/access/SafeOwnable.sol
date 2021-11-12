@@ -45,7 +45,6 @@ abstract contract SafeOwnable is Context {
         _;
     }
 
-
     /**
      * @dev Throws if called by any account other than the new owner.
      */
@@ -66,19 +65,19 @@ abstract contract SafeOwnable is Context {
     }
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * @dev Initiates transfer ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function beginTransferOwnership(address newOwner) public virtual onlyOwner {
         require(newOwner != address(0), "SafeOwnable: new owner is the zero address");
         _newOwner = newOwner;
     }
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
+     * @dev Approves ownership transfer of the contract to a new account (`newOwner`).
+     * Can only be called by the newly assigned owner.
      */
-    function acceptOwnership() public virtual onlyNewOwner {
+    function acceptTransferOwnership() public virtual onlyNewOwner {
         _transferOwnership(_newOwner);
     }
 
